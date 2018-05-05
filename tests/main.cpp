@@ -93,6 +93,7 @@ double convert(DataType dataType, double value)
     }
 }
 
+template<bool Compress>
 TestResult testReadAndWrite(TestData &data)
 {
     TestResult result;
@@ -100,7 +101,7 @@ TestResult testReadAndWrite(TestData &data)
 
     const TimeSeries::time_s64 timeStart = 55556666;
     const TimeSeries::time_s64 timeStep = data.timeStep;
-    TimeSeriesArray<> array(timeStep * data.valueCount);
+    TimeSeriesArray<65536, Compress> array(timeStep * data.valueCount);
 
     // Test writing timeseries data
     {
@@ -116,7 +117,7 @@ TestResult testReadAndWrite(TestData &data)
 
         result.durationWrite = std::chrono::duration<double>(
                                std::chrono::steady_clock::now() - durationStart).count();
-  }
+    }
 
     // Test reading timeseries data
     {
@@ -160,7 +161,11 @@ TestResult testReadAndWrite(TestData &data)
             iter.next();
         }
 
-        if (result.isSuccess && iter.isValid()) {
+        if (result.isSuccess && iter.isValid())
+        {
+
+            iter.next();
+
             result.error = "Iterator over-indexing";
             result.isSuccess = false;
         }
@@ -225,6 +230,7 @@ TestResult testReadAndWrite(TestData &data)
     return result;
 }
 
+template<bool Compress>
 bool test(DataType dataType, const double *values, int valueCount)
 {
     TestData testData;
@@ -234,62 +240,23 @@ bool test(DataType dataType, const double *values, int valueCount)
     testData.valueCount = valueCount;
 
     const double timeScale = (valueCount * 16.0) / (1024 * 1024);
-    std::cout << "Data type : ";
-
-    switch (dataType)
-    {
-    case DataType::BOOL:
-        std::cout << "BOOL";
-        break;
-    case DataType::U8:
-        std::cout << "U8";
-        break;
-    case DataType::S8:
-        std::cout << "S8";
-        break;
-    case DataType::U16:
-        std::cout << "U16";
-        break;
-    case DataType::S16:
-        std::cout << "S16";
-        break;
-    case DataType::U32:
-        std::cout << "U32";
-        break;
-    case DataType::S32:
-        std::cout << "S32";
-        break;
-    case DataType::U64:
-        std::cout << "U64";
-        break;
-    case DataType::S64:
-        std::cout << "S64";
-        break;
-    case DataType::FLOAT:
-        std::cout << "FLOAT";
-        break;
-    case DataType::DOUBLE:
-        std::cout << "DOUBLE";
-        break;
-    }
-
-    std::cout << std::endl;
-    auto result = testReadAndWrite(testData);
+    std::cout << "Compress        : " << (Compress ? "true" : "false") << std::endl;
+    auto result = testReadAndWrite<Compress>(testData);
 
     std::cout
-        << "Time write : " << result.durationWrite << "s   Speed : "
+        << "Time write      : " << result.durationWrite << "s   Speed : "
         << (timeScale * (1.0 / result.durationWrite)) << "MB/s"
         << std::endl
 
-        << "Time read  : " << result.durationRead
+        << "Time read       : " << result.durationRead
         << "s   Speed : " << (timeScale * (1.0 / result.durationRead)) << "MB/s"
         << std::endl
 
-        << "Time read_ : " << result.durationReadRange
+        << "Time read range : " << result.durationReadRange
         << "s   Speed : " << (timeScale * (1.0 / result.durationReadRange)) << "MB/s"
         << std::endl
 
-        << "Compressed size: " << (result.compressedRatio * 100.0) << "% of original data"
+        << "Compressed size : " << (result.compressedRatio * 100.0) << "% of original data"
         << std::endl;
 
     if (!result.isSuccess) {
@@ -303,7 +270,7 @@ bool test(DataType dataType, const double *values, int valueCount)
 
 int main(int argc, char **argv) {
     bool testFailed = false;
-    const int valueCount = 55556666;
+    const int valueCount = 155556666;
     double* values = new double[valueCount];
 
     std::cout
@@ -339,7 +306,49 @@ int main(int argc, char **argv) {
 
     for (const auto dataType : dataTypes) {
         std::cout << std::endl;
-        testFailed |= !test(dataType, values, valueCount);
+        std::cout << "Data type : ";
+
+        switch (dataType)
+        {
+        case DataType::BOOL:
+            std::cout << "BOOL";
+            break;
+        case DataType::U8:
+            std::cout << "U8";
+            break;
+        case DataType::S8:
+            std::cout << "S8";
+            break;
+        case DataType::U16:
+            std::cout << "U16";
+            break;
+        case DataType::S16:
+            std::cout << "S16";
+            break;
+        case DataType::U32:
+            std::cout << "U32";
+            break;
+        case DataType::S32:
+            std::cout << "S32";
+            break;
+        case DataType::U64:
+            std::cout << "U64";
+            break;
+        case DataType::S64:
+            std::cout << "S64";
+            break;
+        case DataType::FLOAT:
+            std::cout << "FLOAT";
+            break;
+        case DataType::DOUBLE:
+            std::cout << "DOUBLE";
+            break;
+        }
+
+        std::cout << std::endl;
+        testFailed |= !test<true>(dataType, values, valueCount);
+        std::cout << std::endl;
+        testFailed |= !test<false>(dataType, values, valueCount);
     }
 
     delete[] values;

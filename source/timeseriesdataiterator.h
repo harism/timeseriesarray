@@ -29,10 +29,11 @@
 
 namespace TimeSeries {
 
-template <int BlockSize> class TimeSeriesDataIterator
+template <int BlockSize, bool Compress>
+class TimeSeriesDataIterator
 {
 public:
-    TimeSeriesDataIterator(const TimeSeriesDataContainer<BlockSize>* container) :
+    TimeSeriesDataIterator(const TimeSeriesDataContainer<BlockSize, Compress>* container) :
         m_time(0),
         m_value(0),
         m_blockCount(0),
@@ -96,8 +97,8 @@ private:
     int m_blockCount;
     int m_blockIndex;
     int m_blockReadIndex;
-    const TimeSeriesDataBlock<BlockSize>* m_block;
-    const TimeSeriesDataContainer<BlockSize>* m_container;
+    const TimeSeriesDataBlock<BlockSize, Compress>* m_block;
+    const TimeSeriesDataContainer<BlockSize, Compress>* m_container;
 };
 
 } // namespace TimeSeries

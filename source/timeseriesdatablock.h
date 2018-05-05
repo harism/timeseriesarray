@@ -27,7 +27,11 @@
 
 namespace TimeSeries {
 
-template <int BlockSize> class TimeSeriesDataBlock
+template <int BlockSize, bool Compressed>
+class TimeSeriesDataBlock;
+
+template <int BlockSize>
+class TimeSeriesDataBlock<BlockSize, true>
 {
 public:
     TimeSeriesDataBlock(time_s64 time, value_u64 value) :
@@ -39,9 +43,7 @@ public:
     {
     }
 
-    virtual ~TimeSeriesDataBlock()
-    {
-    }
+    ~TimeSeriesDataBlock() = default;
 
     time_s64 beginTime() const
     {
@@ -188,6 +190,88 @@ private:
     value_u64 m_beginValue;
     value_u64 m_endValue;
     value_u8 m_data[BlockSize];
+};
+
+template <int BlockSize>
+class TimeSeriesDataBlock<BlockSize, false>
+{
+public:
+    TimeSeriesDataBlock(time_s64 time, value_u64 value) :
+        m_index(0)
+    {
+        m_times[0] = time;
+        m_values[0] = value;
+    }
+
+    ~TimeSeriesDataBlock() = default;
+
+    time_s64 beginTime() const
+    {
+        return m_times[0];
+    }
+
+    time_s64 endTime() const
+    {
+        return m_times[m_index];
+    }
+
+    value_u64 beginValue() const
+    {
+        return m_values[0];
+    }
+
+    value_u64 endValue() const
+    {
+        return m_values[m_index];
+    }
+
+    int size() const
+    {
+        return m_index;
+    }
+
+    size_t dataSize() const
+    {
+        return (m_index + 1) * 16;
+    }
+
+    bool append(time_s64 time, value_u64 value)
+    {
+        if (time <= endTime())
+        {
+            return true;
+        }
+
+        if (m_index >= (BlockSize / 16))
+        {
+            return false;
+        }
+
+        m_index++;
+        m_times[m_index] = time;
+        m_values[m_index] = value;
+
+        return true;
+    }
+
+    int readAtOffset(int offset, time_s64& time, value_u64& value) const
+    {
+        time = m_times[offset + 1];
+        value = m_values[offset + 1];
+        return 1;
+    }
+
+    int read(time_s64*& times, value_u64*& values) const
+    {
+        times = m_times;
+        values = m_values;
+        return m_index + 1;
+    }
+
+private:
+    int m_index;
+    mutable time_s64 m_times[BlockSize / 16 + 1];
+    mutable value_u64 m_values[BlockSize / 16 + 1];
 };
 
 } // namespace TimeSeries

@@ -28,10 +28,10 @@
 #include "timeseriesdataiterator.h"
 #include "timeseriesdatarange.h"
 
-namespace TimeSeries
-{
+namespace TimeSeries {
 
-template <int BlockSize = 8192> class TimeSeriesArray
+template <int BlockSize = 8192, bool Compress = true>
+class TimeSeriesArray
 {
 public:
     TimeSeriesArray(time_s64 sizeMillis) : m_container(sizeMillis)
@@ -47,14 +47,14 @@ public:
         m_container.append(time, value);
     }
 
-    TimeSeriesDataIterator<BlockSize> iter() const
+    TimeSeriesDataIterator<BlockSize, Compress> iter() const
     {
-        return TimeSeriesDataIterator<BlockSize>(&m_container);
+        return TimeSeriesDataIterator<BlockSize, Compress>(&m_container);
     }
 
-    TimeSeriesDataRange<BlockSize> range(time_s64 beginTime = 0, time_s64 endTime = -1) const
+    TimeSeriesDataRange<BlockSize, Compress> range(time_s64 beginTime = 0, time_s64 endTime = -1) const
     {
-        return TimeSeriesDataRange<BlockSize>(&m_container, beginTime, endTime);
+        return TimeSeriesDataRange<BlockSize, Compress>(&m_container, beginTime, endTime);
     }
 
     size_t dataSize() const
@@ -63,7 +63,7 @@ public:
     }
 
 private:
-    TimeSeriesDataContainer<BlockSize> m_container;
+    TimeSeriesDataContainer<BlockSize, Compress> m_container;
 };
 
 } // namespace TimeSeries

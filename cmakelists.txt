@@ -6,11 +6,10 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 project(TimeSeriesArray)
 
-set(TARGET_NAME
-  Tests
-)
+set(TARGET_NAME Tests)
 
-set(TIMESERIES_HEADER_FILES
+set(
+  TIMESERIES_HEADER_FILES
   source/timeseriesarray.h
   source/timeseriesarraytypes.h
   source/timeseriesdatablock.h
@@ -20,14 +19,8 @@ set(TIMESERIES_HEADER_FILES
   source/timeseriespointerbuffer.h
 )
 
-source_group("TimeSeriesArray"
-FILES ${TIMESERIES_HEADER_FILES}
-)
-
-set(HEADER_FILES
-)
-
-set(SOURCE_FILES
+set(
+  SOURCE_FILES
   tests/main.cpp
 )
 
@@ -37,11 +30,12 @@ add_executable(
   ${TIMESERIES_HEADER_FILES}
 )
 
-add_test(${TARGET_NAME}
-  ${TARGET_NAME}
-)
-
 target_include_directories(
   ${TARGET_NAME}
   PRIVATE source
+)
+
+source_group(
+  "TimeSeriesArray"
+  FILES ${TIMESERIES_HEADER_FILES}
 )

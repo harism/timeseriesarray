@@ -23,10 +23,10 @@
 #ifndef TIME_SERIES_POINTER_BUFFER_H
 #define TIME_SERIES_POINTER_BUFFER_H
 
-namespace TimeSeries
-{
+namespace TimeSeries {
 
-template <class PointerType> class TimeSeriesPointerBuffer
+template <class PointerType>
+class TimeSeriesPointerBuffer
 {
 public:
     TimeSeriesPointerBuffer() :

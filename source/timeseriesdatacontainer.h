@@ -27,10 +27,10 @@
 #include "timeseriesdatablock.h"
 #include "timeseriespointerbuffer.h"
 
-namespace TimeSeries
-{
+namespace TimeSeries {
 
-template <int BlockSize> class TimeSeriesDataContainer
+template <int BlockSize, bool Compress>
+class TimeSeriesDataContainer
 {
 public:
     TimeSeriesDataContainer(time_s64 sizeMillis) : m_sizeMillis(sizeMillis)
@@ -49,7 +49,7 @@ public:
         }
         if (blockCount() == 0 || !m_blocks.last()->append(time, valueIn))
         {
-            m_blocks.append(new TimeSeriesDataBlock<BlockSize>(time, valueIn));
+            m_blocks.append(new TimeSeriesDataBlock<BlockSize, Compress>(time, valueIn));
         }
     }
 
@@ -58,7 +58,7 @@ public:
         return m_blocks.size();
     }
 
-    const TimeSeriesDataBlock<BlockSize>* block(int index) const
+    const TimeSeriesDataBlock<BlockSize, Compress>* block(int index) const
     {
         return m_blocks.at(index);
     }
@@ -74,7 +74,7 @@ public:
 
 private:
     time_s64 m_sizeMillis;
-    TimeSeriesPointerBuffer<TimeSeriesDataBlock<BlockSize>> m_blocks;
+    TimeSeriesPointerBuffer<TimeSeriesDataBlock<BlockSize, Compress>> m_blocks;
 };
 
 } // namespace TimeSeries

@@ -29,11 +29,11 @@
 
 namespace TimeSeries {
 
-template <int BlockSize>
+template <int BlockSize, bool Compress>
 class TimeSeriesDataRange
 {
 public:
-    TimeSeriesDataRange(const TimeSeriesDataContainer<BlockSize>* container,
+    TimeSeriesDataRange(const TimeSeriesDataContainer<BlockSize, Compress>* container,
                         time_s64 beginTime, time_s64 endTime) :
         m_beginTime(beginTime),
         m_endTime(endTime),
@@ -46,7 +46,7 @@ public:
     class Iterator
     {
     public:
-        Iterator(const TimeSeriesDataContainer<BlockSize>* container,
+        Iterator(const TimeSeriesDataContainer<BlockSize, Compress>* container,
                  time_s64 beginTime,
                  time_s64 endTime) :
             m_beginTime(beginTime),
@@ -54,7 +54,9 @@ public:
             m_count(0),
             m_index(0),
             m_times(nullptr),
+            m_timesAlloc(nullptr),
             m_values(nullptr),
+            m_valuesAlloc(nullptr),
             m_blockIndex(0),
             m_container(container)
         {
@@ -69,9 +71,9 @@ public:
 
                 if (block->endTime() >= m_endTime)
                 {
-                    m_times = new time_s64[BlockSize / 2 + 1];
-                    m_values = new value_double[BlockSize / 2 + 1];
-                    m_count = block->read(m_times, reinterpret_cast<value_u64*>(m_values));
+                    m_timesAlloc = m_times = new time_s64[BlockSize / 2 + 1];
+                    m_valuesAlloc = m_values = new value_double[BlockSize / 2 + 1];
+                    m_count = block->read(m_times, reinterpret_cast<value_u64*&>(m_values));
 
                     while (m_index + 1 < m_count && m_times[m_index + 1] <= m_beginTime)
                     {
@@ -92,8 +94,8 @@ public:
 
         ~Iterator()
         {
-            delete[] m_times;
-            delete[] m_values;
+            delete[] m_timesAlloc;
+            delete[] m_valuesAlloc;
         }
 
         time_s64 time() const
@@ -121,7 +123,7 @@ public:
                 else
                 {
                     const auto block = m_container->block(m_blockIndex);
-                    m_count = block->read(m_times, reinterpret_cast<value_u64*>(m_values));
+                    m_count = block->read(m_times, reinterpret_cast<value_u64*&>(m_values));
                     m_index = 0;
                 }
             }
@@ -146,10 +148,12 @@ public:
         int m_count;
         int m_index;
         time_s64* m_times;
+        time_s64* m_timesAlloc;
         value_double* m_values;
+        value_double* m_valuesAlloc;
 
         int m_blockIndex;
-        const TimeSeriesDataContainer<BlockSize>* m_container;
+        const TimeSeriesDataContainer<BlockSize, Compress>* m_container;
     };
 
     const Iterator begin() const
@@ -165,7 +169,7 @@ public:
 private:
     time_s64 m_beginTime;
     time_s64 m_endTime;
-    const TimeSeriesDataContainer<BlockSize>* m_container;
+    const TimeSeriesDataContainer<BlockSize, Compress>* m_container;
 };
 
 } // namespace TimeSeries
